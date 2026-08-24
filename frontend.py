@@ -23,6 +23,7 @@ Run with:
     streamlit run app.py
 """
 
+import html
 import json
 from datetime import datetime, date
 
@@ -113,7 +114,80 @@ REQUIRED_RESPONSE_FIELDS = [
 ]
 
 DEFAULT_API_URL = "https://ai-powerd.fastapicloud.dev"
-CURRENCY_SYMBOL = "$"  # Change if the backend/project specifies another currency.
+CURRENCY_SYMBOL = "$"  # Keep the backend/project currency unchanged.
+
+
+# ============================================================
+# THEME CONFIGURATION
+# ============================================================
+
+THEMES = {
+    "light": {
+        "page_bg": "#f5f8fc",
+        "primary_bg": "#ffffff",
+        "card_bg": "#ffffff",
+        "sidebar_bg": "#f8fafc",
+        "text": "#0b1f3a",
+        "muted_text": "#68758a",
+        "border": "#dfe6ef",
+        "primary": "#1a73e8",
+        "success": "#16834f",
+        "danger": "#c0392b",
+        "warning": "#a66a00",
+        "chart_bg": "#ffffff",
+        "grid": "#e8edf4",
+        "header_bg": "#0b1f3a",
+        "header_bg_2": "#14345e",
+        "header_text": "#ffffff",
+        "input_bg": "#ffffff",
+        "button_bg": "#1a73e8",
+        "button_text": "#ffffff",
+        "table_header": "#eef3f9",
+        "surface_alt": "#f6f8fb",
+        "success_bg": "#eaf8f0",
+        "success_border": "#bfe8cd",
+        "danger_bg": "#fdf0ef",
+        "danger_border": "#f0c8c4",
+        "warning_bg": "#fff7e6",
+        "warning_border": "#f0d79a",
+        "shadow": "rgba(16, 30, 54, 0.08)",
+    },
+    "dark": {
+        "page_bg": "#07111f",
+        "primary_bg": "#0a1626",
+        "card_bg": "#0d2035",
+        "sidebar_bg": "#091725",
+        "text": "#f4f7fb",
+        "muted_text": "#9aabc0",
+        "border": "#1d3853",
+        "primary": "#3b9cff",
+        "success": "#35c878",
+        "danger": "#ff6b61",
+        "warning": "#f0b84b",
+        "chart_bg": "#0a1626",
+        "grid": "#20374f",
+        "header_bg": "#08182a",
+        "header_bg_2": "#0d2a48",
+        "header_text": "#f7fbff",
+        "input_bg": "#0d2035",
+        "button_bg": "#1677e8",
+        "button_text": "#ffffff",
+        "table_header": "#102941",
+        "surface_alt": "#0b1b2c",
+        "success_bg": "#0d3022",
+        "success_border": "#1d6946",
+        "danger_bg": "#351b1d",
+        "danger_border": "#71302d",
+        "warning_bg": "#332914",
+        "warning_border": "#70551f",
+        "shadow": "rgba(0, 0, 0, 0.28)",
+    },
+}
+
+
+def get_theme() -> dict:
+    """Return the active theme from session state."""
+    return THEMES.get(st.session_state.get("theme", "light"), THEMES["light"])
 
 
 # ============================================================
@@ -121,176 +195,156 @@ CURRENCY_SYMBOL = "$"  # Change if the backend/project specifies another currenc
 # ============================================================
 
 def inject_css() -> None:
-    st.markdown(
-        """
-        <style>
-        html, body, [class*="css"] {
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-        }
+    """Inject CSS generated from the active theme."""
+    t = get_theme()
 
-        #MainMenu, footer { visibility: hidden; }
+    css = f"""
+    <style>
+    :root {{
+        --page-bg: {t['page_bg']};
+        --primary-bg: {t['primary_bg']};
+        --card-bg: {t['card_bg']};
+        --sidebar-bg: {t['sidebar_bg']};
+        --text: {t['text']};
+        --muted-text: {t['muted_text']};
+        --border: {t['border']};
+        --primary: {t['primary']};
+        --success: {t['success']};
+        --danger: {t['danger']};
+        --warning: {t['warning']};
+        --chart-bg: {t['chart_bg']};
+        --grid: {t['grid']};
+        --header-bg: {t['header_bg']};
+        --header-bg-2: {t['header_bg_2']};
+        --header-text: {t['header_text']};
+        --input-bg: {t['input_bg']};
+        --button-bg: {t['button_bg']};
+        --button-text: {t['button_text']};
+        --table-header: {t['table_header']};
+        --surface-alt: {t['surface_alt']};
+        --success-bg: {t['success_bg']};
+        --success-border: {t['success_border']};
+        --danger-bg: {t['danger_bg']};
+        --danger-border: {t['danger_border']};
+        --warning-bg: {t['warning_bg']};
+        --warning-border: {t['warning_border']};
+        --shadow: {t['shadow']};
+    }}
 
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
+    html, body, [class*="css"] {{
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }}
 
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.25rem 1.75rem;
-            background: linear-gradient(135deg, #0b1f3a 0%, #14345e 100%);
-            border-radius: 16px;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 18px rgba(11, 31, 58, 0.18);
-        }
-        .app-header h1 {
-            color: #ffffff;
-            font-size: 1.65rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        .app-header p {
-            color: #c7d6ee;
-            margin: 0.15rem 0 0 0;
-            font-size: 0.95rem;
-        }
-        .status-pill {
-            padding: 0.4rem 0.9rem;
-            border-radius: 999px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-        .status-pill.online {
-            background: #e3f7ea;
-            color: #14804a;
-        }
-        .status-pill.offline {
-            background: #fdeaea;
-            color: #b3261e;
-        }
+    html, body, [data-testid="stAppViewContainer"], .stApp {{
+        background: var(--page-bg) !important;
+        color: var(--text) !important;
+    }}
 
-        .section-header {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #0b1f3a;
-            margin: 1.75rem 0 0.75rem 0;
-            border-left: 4px solid #1a56db;
-            padding-left: 0.6rem;
-        }
+    [data-testid="stHeader"] {{
+        background: transparent !important;
+    }}
 
-        .kpi-card {
-            background: #ffffff;
-            border: 1px solid #e7ebf2;
-            border-radius: 14px;
-            padding: 1.1rem 1.3rem;
-            box-shadow: 0 2px 10px rgba(16, 30, 54, 0.05);
-            height: 100%;
-        }
-        .kpi-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #6b7688;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 0.35rem;
-        }
-        .kpi-value {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #0b1f3a;
-        }
-        .kpi-value.green { color: #14804a; }
-        .kpi-value.red { color: #b3261e; }
-        .kpi-sub {
-            font-size: 0.8rem;
-            color: #8a93a3;
-            margin-top: 0.15rem;
-        }
+    [data-testid="stSidebar"] > div:first-child {{
+        background: var(--sidebar-bg) !important;
+        border-right: 1px solid var(--border);
+    }}
 
-        .result-card {
-            background: linear-gradient(135deg, #0b1f3a 0%, #163b6b 100%);
-            border-radius: 18px;
-            padding: 2rem 2.2rem;
-            color: #ffffff;
-            box-shadow: 0 6px 24px rgba(11, 31, 58, 0.25);
-        }
-        .result-card .label {
-            font-size: 0.95rem;
-            color: #b9caea;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .result-card .value {
-            font-size: 3rem;
-            font-weight: 800;
-            margin: 0.2rem 0 0.4rem 0;
-        }
-        .result-card .meta {
-            font-size: 0.85rem;
-            color: #9db3d9;
-        }
+    [data-testid="stSidebar"] * {{
+        color: var(--text);
+    }}
 
-        .anomaly-card {
-            border-radius: 16px;
-            padding: 1.5rem 1.8rem;
-            border: 1px solid transparent;
-        }
-        .anomaly-card.normal {
-            background: #eefaf2;
-            border-color: #bfe8cd;
-        }
-        .anomaly-card.anomaly {
-            background: #fdeeed;
-            border-color: #f3c3c0;
-        }
-        .anomaly-title {
-            font-size: 1.25rem;
-            font-weight: 800;
-            margin-bottom: 0.25rem;
-        }
-        .anomaly-title.normal { color: #14804a; }
-        .anomaly-title.anomaly { color: #b3261e; }
-        .anomaly-desc {
-            font-size: 0.92rem;
-            color: #3d4759;
-            margin-bottom: 0.5rem;
-        }
-        .anomaly-score-tag {
-            display: inline-block;
-            background: rgba(11, 31, 58, 0.06);
-            border-radius: 8px;
-            padding: 0.25rem 0.6rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #0b1f3a;
-        }
+    #MainMenu, footer {{ visibility: hidden; }}
 
-        .info-panel {
-            background: #f6f8fb;
-            border: 1px solid #e7ebf2;
-            border-radius: 14px;
-            padding: 1.2rem 1.4rem;
-        }
+    .block-container {{
+        padding-top: 2rem;
+        padding-bottom: 4rem;
+        max-width: 1500px;
+    }}
 
-        .cta-panel {
-            background: #f0f5ff;
-            border: 1px dashed #9db8ef;
-            border-radius: 16px;
-            padding: 1.6rem 1.8rem;
-            text-align: center;
-        }
-        .cta-panel h3 {
-            color: #0b1f3a;
-            margin-bottom: 0.3rem;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    .app-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.35rem 1.75rem;
+        background: linear-gradient(135deg, var(--header-bg) 0%, var(--header-bg-2) 100%);
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 5px 20px var(--shadow);
+    }}
+    .app-header h1 {{ color: var(--header-text); font-size: 1.65rem; font-weight: 700; margin: 0; }}
+    .app-header p {{ color: #c7d6ee; margin: 0.15rem 0 0 0; font-size: 0.95rem; }}
+
+    .status-pill {{ padding: 0.45rem 0.9rem; border-radius: 999px; font-weight: 700; font-size: 0.85rem; white-space: nowrap; }}
+    .status-pill.online {{ background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }}
+    .status-pill.offline {{ background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }}
+
+    .section-header {{ font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 1.6rem 0 0.75rem 0; border-left: 4px solid var(--primary); padding-left: 0.6rem; }}
+
+    .kpi-card {{ background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; box-shadow: 0 2px 10px var(--shadow); height: 100%; min-height: 122px; }}
+    .kpi-label {{ font-size: 0.78rem; font-weight: 700; color: var(--muted-text); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }}
+    .kpi-value {{ font-size: 1.55rem; font-weight: 800; color: var(--text); overflow-wrap: anywhere; }}
+    .kpi-value.green {{ color: var(--success); }}
+    .kpi-value.red {{ color: var(--danger); }}
+    .kpi-sub {{ font-size: 0.8rem; color: var(--muted-text); margin-top: 0.2rem; }}
+
+    .result-card {{ background: linear-gradient(135deg, var(--header-bg) 0%, var(--header-bg-2) 100%); border-radius: 18px; padding: 2rem 2.2rem; color: var(--header-text); box-shadow: 0 6px 24px var(--shadow); }}
+    .result-card .label {{ font-size: 0.95rem; color: #b9caea; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }}
+    .result-card .value {{ font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; margin: 0.2rem 0 0.4rem 0; overflow-wrap: anywhere; }}
+    .result-card .meta {{ font-size: 0.85rem; color: #9db3d9; overflow-wrap: anywhere; }}
+
+    .anomaly-card {{ border-radius: 16px; padding: 1.5rem 1.8rem; border: 1px solid transparent; height: 100%; box-sizing: border-box; }}
+    .anomaly-card.normal {{ background: var(--success-bg); border-color: var(--success-border); }}
+    .anomaly-card.anomaly {{ background: var(--danger-bg); border-color: var(--danger-border); }}
+    .anomaly-title {{ font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; }}
+    .anomaly-title.normal {{ color: var(--success); }}
+    .anomaly-title.anomaly {{ color: var(--danger); }}
+    .anomaly-desc {{ font-size: 0.92rem; color: var(--text); margin-bottom: 0.6rem; opacity: 0.88; }}
+    .anomaly-score-tag {{ display: inline-block; background: rgba(128, 148, 170, 0.16); border: 1px solid var(--border); border-radius: 8px; padding: 0.25rem 0.6rem; font-size: 0.85rem; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }}
+
+    .info-panel {{ background: var(--surface-alt); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.4rem; color: var(--text); }}
+    .cta-panel {{ background: color-mix(in srgb, var(--primary) 9%, var(--card-bg)); border: 1px dashed var(--primary); border-radius: 16px; padding: 1.6rem 1.8rem; text-align: center; color: var(--text); }}
+    .cta-panel h3 {{ color: var(--text); margin-bottom: 0.3rem; }}
+
+    .sidebar-title {{ color: var(--text); font-size: 1.4rem; font-weight: 800; }}
+    .sidebar-subtitle {{ color: var(--muted-text); font-size: 0.85rem; }}
+    .theme-status {{ color: var(--muted-text); font-size: 0.82rem; margin-top: 0.35rem; }}
+    .footer {{ margin-top: 2.5rem; padding: 1rem 0 0.25rem; text-align: center; color: var(--muted-text); font-size: 0.78rem; border-top: 1px solid var(--border); }}
+
+    /* Streamlit native controls */
+    [data-testid="stTextInput"] input,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stDateInput"] input {{
+        background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border) !important;
+    }}
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div {{
+        background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border) !important;
+    }}
+    [data-baseweb="popover"], [data-baseweb="menu"] {{ background: var(--card-bg) !important; color: var(--text) !important; }}
+    [role="option"] {{ background: var(--card-bg) !important; color: var(--text) !important; }}
+    [role="option"]:hover {{ background: var(--surface-alt) !important; }}
+    [data-testid="stSlider"] [role="slider"] {{ background: var(--primary) !important; }}
+    [data-testid="stCheckbox"] label, [data-testid="stRadio"] label {{ color: var(--text) !important; }}
+    [data-testid="stButton"] > button, [data-testid="stDownloadButton"] > button, [data-testid="stFormSubmitButton"] > button {{
+        background: var(--button-bg) !important; color: var(--button-text) !important; border: 1px solid var(--button-bg) !important;
+        border-radius: 9px !important; font-weight: 650 !important; min-height: 2.5rem;
+    }}
+    [data-testid="stButton"] > button:hover, [data-testid="stDownloadButton"] > button:hover, [data-testid="stFormSubmitButton"] > button:hover {{ filter: brightness(1.08); }}
+    [data-testid="stDataFrame"] {{ border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }}
+    [data-testid="stExpander"] {{ background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; }}
+    [data-testid="stAlert"] {{ border-radius: 10px; }}
+    [data-testid="stMarkdownContainer"], [data-testid="stCaptionContainer"] {{ color: var(--text); }}
+
+    @media (max-width: 800px) {{
+        .block-container {{ padding-left: 1rem; padding-right: 1rem; }}
+        .app-header {{ align-items: flex-start; flex-direction: column; }}
+        .status-pill {{ align-self: flex-start; }}
+        .result-card {{ padding: 1.4rem; }}
+    }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
 
 
 # ============================================================
@@ -310,6 +364,10 @@ def init_session_state() -> None:
         "last_is_anomaly": None,
         "prediction_history": [],     # list of dicts
         "nav_page": "📊 Dashboard",
+        "theme": "light",
+        "reset_confirm": False,
+        "_last_health_response": None,
+        "_last_health_error": None,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -416,7 +474,7 @@ def handle_api_error(result: dict) -> str:
         "validation_error": "⚠️ Invalid input. Please check the prediction fields.",
         "server_error": "❌ Prediction service encountered an internal error.",
     }
-    return messages.get(error_type, "⚠️ The API returned an unexpected error.")
+    return messages.get(error_type, "⚠️ The API returned an unexpected response format.")
 
 
 def validate_prediction_response(data: dict) -> bool:
@@ -447,12 +505,12 @@ def format_timestamp(dt: datetime) -> str:
 # ============================================================
 
 def render_kpi_card(label: str, value: str, sub: str = "", color: str = "") -> str:
-    color_class = f" {color}" if color else ""
+    color_class = f" {color}" if color in {"green", "red"} else ""
     return f"""
         <div class="kpi-card">
-            <div class="kpi-label">{label}</div>
-            <div class="kpi-value{color_class}">{value}</div>
-            <div class="kpi-sub">{sub}</div>
+            <div class="kpi-label">{html.escape(str(label))}</div>
+            <div class="kpi-value{color_class}">{html.escape(str(value))}</div>
+            <div class="kpi-sub">{html.escape(str(sub))}</div>
         </div>
     """
 
@@ -466,6 +524,7 @@ def render_anomaly_card(is_anomaly: bool, anomaly_score) -> str:
         else "Revenue is within the expected range."
     )
     score_display = anomaly_score if anomaly_score is not None else "—"
+    score_display = html.escape(str(score_display))
     return f"""
         <div class="anomaly-card {state}">
             <div class="anomaly-title {state}">{title}</div>
@@ -484,12 +543,14 @@ def render_app_header(title: str, subtitle: str) -> None:
     else:
         pill_class, pill_text = "offline", "⚪ API Status Unknown"
 
+    safe_title = html.escape(str(title))
+    safe_subtitle = html.escape(str(subtitle))
     st.markdown(
         f"""
         <div class="app-header">
             <div>
-                <h1>{title}</h1>
-                <p>{subtitle}</p>
+                <h1>{safe_title}</h1>
+                <p>{safe_subtitle}</p>
             </div>
             <div class="status-pill {pill_class}">{pill_text}</div>
         </div>
@@ -503,25 +564,21 @@ def render_app_header(title: str, subtitle: str) -> None:
 # ============================================================
 
 def create_revenue_chart(history: list) -> go.Figure:
-    """
-    Builds a Plotly line chart of predicted revenue over time using
-    ONLY real session prediction history. Anomalous points are
-    visually distinguished from normal points.
-    """
+    """Build the existing revenue-history visualization using theme colors."""
+    t = get_theme()
     df = pd.DataFrame(history)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df = df.sort_values("timestamp")
 
     fig = go.Figure()
-
     fig.add_trace(
         go.Scatter(
             x=df["timestamp"],
             y=df["predicted_revenue"],
             mode="lines+markers",
             name="Predicted Revenue",
-            line=dict(color="#1a56db", width=2.5),
-            marker=dict(size=7, color="#1a56db"),
+            line=dict(color=t["primary"], width=2.5),
+            marker=dict(size=7, color=t["primary"]),
             hovertemplate=(
                 "Timestamp: %{x}<br>"
                 "Predicted Revenue: %{y:$,.2f}<br>"
@@ -538,7 +595,7 @@ def create_revenue_chart(history: list) -> go.Figure:
                 y=anomalies["predicted_revenue"],
                 mode="markers",
                 name="Anomaly",
-                marker=dict(size=13, color="#b3261e", symbol="x", line=dict(width=2)),
+                marker=dict(size=13, color=t["danger"], symbol="x", line=dict(width=2)),
                 customdata=anomalies[["anomaly_status", "anomaly_score"]],
                 hovertemplate=(
                     "Timestamp: %{x}<br>"
@@ -554,57 +611,53 @@ def create_revenue_chart(history: list) -> go.Figure:
         title="Revenue Prediction History",
         xaxis_title="Timestamp",
         yaxis_title="Predicted Revenue",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#ffffff",
-        font=dict(color="#0b1f3a"),
+        plot_bgcolor=t["chart_bg"],
+        paper_bgcolor=t["chart_bg"],
+        font=dict(color=t["text"]),
         margin=dict(l=10, r=10, t=50, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=True, gridcolor="#eef1f6"),
+        xaxis=dict(showgrid=False, color=t["text"], linecolor=t["border"]),
+        yaxis=dict(showgrid=True, gridcolor=t["grid"], color=t["text"], linecolor=t["border"]),
         hovermode="closest",
     )
     return fig
 
 
 def create_anomaly_gauge(anomaly_score) -> go.Figure:
-    """
-    Visualizes the raw backend anomaly score. Does NOT assume a
-    0-1 or 0-100 range unless one is known, and never rescales the
-    backend's value. Purely a visualization — makes no independent
-    anomaly decision.
-    """
+    """Visualize the raw backend anomaly score; styling only is theme-aware."""
+    t = get_theme()
     try:
         score = float(anomaly_score)
     except (TypeError, ValueError):
         score = 0.0
 
-    # Dynamic, sensible visualization range since the backend does not
-    # define a normalized scale. This is display-only and never alters
-    # the raw score shown to the user.
+    # Display range retained from the original visualization; it does not alter
+    # the raw backend score or make an anomaly decision.
     axis_max = max(abs(score) * 1.5, 1.0)
 
     fig = go.Figure(
         go.Indicator(
             mode="gauge+number",
             value=score,
-            number={"valueformat": ".4f"},
-            title={"text": "Raw Anomaly Score"},
+            number={"valueformat": ".4f", "font": {"color": t["text"]}},
+            title={"text": "Raw Anomaly Score", "font": {"color": t["text"]}},
             gauge={
-                "axis": {"range": [0, axis_max]},
-                "bar": {"color": "#b3261e" if score >= axis_max / 2 else "#1a56db"},
-                "bgcolor": "#ffffff",
+                "axis": {"range": [0, axis_max], "tickcolor": t["text"], "tickfont": {"color": t["text"]}},
+                "bar": {"color": t["danger"] if score >= axis_max / 2 else t["primary"]},
+                "bgcolor": t["surface_alt"],
                 "borderwidth": 1,
-                "bordercolor": "#e7ebf2",
+                "bordercolor": t["border"],
                 "steps": [
-                    {"range": [0, axis_max / 2], "color": "#eefaf2"},
-                    {"range": [axis_max / 2, axis_max], "color": "#fdeeed"},
+                    {"range": [0, axis_max / 2], "color": t["success_bg"]},
+                    {"range": [axis_max / 2, axis_max], "color": t["danger_bg"]},
                 ],
             },
         )
     )
     fig.update_layout(
-        paper_bgcolor="#ffffff",
-        font=dict(color="#0b1f3a"),
+        paper_bgcolor=t["chart_bg"],
+        plot_bgcolor=t["chart_bg"],
+        font=dict(color=t["text"]),
         margin=dict(l=20, r=20, t=60, b=10),
         height=320,
     )
@@ -615,52 +668,104 @@ def create_anomaly_gauge(anomaly_score) -> go.Figure:
 # SIDEBAR
 # ============================================================
 
+def _apply_health_result(result: dict) -> None:
+    """Store the explicit health-check result without making another request."""
+    if result.get("ok"):
+        st.session_state["api_status"] = "online"
+        data = result.get("data") or {}
+        st.session_state["model_loaded"] = data.get("model_loaded", data.get("model_status"))
+        st.session_state["model_version"] = data.get("model_version")
+        st.session_state["_last_health_response"] = data
+        st.session_state["_last_health_error"] = None
+    else:
+        st.session_state["api_status"] = "offline"
+        st.session_state["model_loaded"] = None
+        st.session_state["_last_health_error"] = result
+
+
+def check_api_status_from_sidebar() -> None:
+    with st.spinner("Checking FastAPI /health..."):
+        result = check_api_health(st.session_state["api_url"])
+    _apply_health_result(result)
+
+
+def reset_session_data() -> None:
+    """Clear prediction/API session data while preserving theme and API URL."""
+    api_url = st.session_state.get("api_url", DEFAULT_API_URL)
+    theme = st.session_state.get("theme", "light")
+    nav_page = st.session_state.get("nav_page", "📊 Dashboard")
+    st.session_state.update({
+        "api_url": api_url,
+        "theme": theme,
+        "nav_page": nav_page,
+        "api_status": None,
+        "model_loaded": None,
+        "model_version": None,
+        "last_prediction": None,
+        "last_predicted_revenue": None,
+        "last_anomaly_status": None,
+        "last_anomaly_score": None,
+        "last_is_anomaly": None,
+        "prediction_history": [],
+        "_last_health_response": None,
+        "_last_health_error": None,
+        "reset_confirm": False,
+    })
+
+
 def render_sidebar() -> None:
     with st.sidebar:
+        theme = get_theme()
+        current_theme = st.session_state.get("theme", "light")
+        current_label = "☀️ Light Mode" if current_theme == "light" else "🌙 Dark Mode"
+        next_label = "🌙 Dark Mode" if current_theme == "light" else "☀️ Light Mode"
+
         st.markdown(
-            """
-            <div style="padding: 0.5rem 0 1rem 0;">
-                <div style="font-size:1.4rem; font-weight:800; color:#0b1f3a;">📈 Revenue AI</div>
-                <div style="font-size:0.85rem; color:#6b7688;">Revenue Forecasting &amp; Anomaly Detection</div>
-            </div>
-            """,
+            '<div style="padding:0.45rem 0 1rem 0;">'
+            '<div class="sidebar-title">📈 Revenue AI</div>'
+            '<div class="sidebar-subtitle">Revenue Forecasting &amp; Anomaly Detection</div>'
+            '</div>',
             unsafe_allow_html=True,
         )
 
-        st.markdown("**Backend Configuration**")
+        st.markdown("### Backend Configuration")
         api_url_input = st.text_input(
             "API URL",
             value=st.session_state["api_url"],
             help="Base URL of the FastAPI backend.",
+            key="api_url_input",
         )
-        st.session_state["api_url"] = normalize_url(api_url_input) if api_url_input else DEFAULT_API_URL
+        normalized = normalize_url(api_url_input) if api_url_input else DEFAULT_API_URL
+        st.session_state["api_url"] = normalized
 
-        if st.button("🔌 Check API Connection", use_container_width=True):
-            result = check_api_health(st.session_state["api_url"])
-            if result["ok"]:
-                st.session_state["api_status"] = "online"
-                data = result["data"] or {}
-                st.session_state["model_loaded"] = data.get("model_loaded", data.get("model_status"))
-                st.session_state["model_version"] = data.get("model_version")
-            else:
-                st.session_state["api_status"] = "offline"
-                st.session_state["model_loaded"] = None
-                st.session_state["_last_health_error"] = result
+        if st.button("🔌 Check API Connection", use_container_width=True, key="sidebar_check_api"):
+            check_api_status_from_sidebar()
 
         status = st.session_state.get("api_status")
         if status == "online":
             st.success("🟢 Connected")
-            if st.session_state.get("model_loaded") is not None:
-                st.caption(f"Model loaded: {st.session_state['model_loaded']}")
-            if st.session_state.get("model_version"):
-                st.caption(f"Model version: {st.session_state['model_version']}")
+            loaded = st.session_state.get("model_loaded")
+            version = st.session_state.get("model_version")
+            if loaded is not None:
+                st.caption(f"Model loaded: {loaded}")
+            if version:
+                st.caption(f"Model version: {version}")
         elif status == "offline":
             st.error("🔴 Offline")
             with st.expander("Technical Details"):
                 st.write(st.session_state.get("_last_health_error"))
+        else:
+            st.caption("API status has not been checked.")
 
         st.markdown("---")
-        st.markdown("**Navigation**")
+        st.markdown("### Appearance")
+        if st.button(next_label, use_container_width=True, key="theme_toggle"):
+            st.session_state["theme"] = "dark" if current_theme == "light" else "light"
+            st.rerun()
+        st.markdown(f'<div class="theme-status">Current: {html.escape(current_label)}</div>', unsafe_allow_html=True)
+
+        st.markdown("---")
+        st.markdown("### Navigation")
         pages = [
             "📊 Dashboard",
             "📈 Revenue Prediction",
@@ -668,12 +773,32 @@ def render_sidebar() -> None:
             "🔌 API Status",
             "ℹ️ About",
         ]
-        st.session_state["nav_page"] = st.radio(
+        selected_page = st.radio(
             "Go to",
             pages,
             index=pages.index(st.session_state["nav_page"]) if st.session_state["nav_page"] in pages else 0,
             label_visibility="collapsed",
+            key="navigation_radio",
         )
+        st.session_state["nav_page"] = selected_page
+
+        st.markdown("---")
+        st.markdown("### Session")
+        if not st.session_state.get("reset_confirm"):
+            if st.button("🗑️ Reset Session", use_container_width=True, key="reset_session"):
+                st.session_state["reset_confirm"] = True
+                st.rerun()
+        else:
+            st.warning("Are you sure you want to clear prediction history and the latest prediction?")
+            yes_col, no_col = st.columns(2)
+            with yes_col:
+                if st.button("Yes, Reset", use_container_width=True, key="confirm_reset"):
+                    reset_session_data()
+                    st.rerun()
+            with no_col:
+                if st.button("Cancel", use_container_width=True, key="cancel_reset"):
+                    st.session_state["reset_confirm"] = False
+                    st.rerun()
 
 
 # ============================================================
@@ -797,7 +922,7 @@ def page_dashboard() -> None:
             """
             <div class="cta-panel">
                 <h3>Generate your first revenue forecast</h3>
-                <p style="color:#4a5568;">Use the Revenue Prediction page to send business data to the AI backend.</p>
+                <p>Use the Revenue Prediction page to send business data to the AI backend.</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -813,7 +938,7 @@ def page_dashboard() -> None:
                 <div class="result-card">
                     <div class="label">Latest Predicted Revenue</div>
                     <div class="value">{revenue_val}</div>
-                    <div class="meta">Model Version: {model_version}</div>
+                    <div class="meta">Model Version: {html.escape(str(model_version))}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -920,7 +1045,7 @@ def page_revenue_prediction() -> None:
                 <div class="result-card">
                     <div class="label">Predicted Revenue</div>
                     <div class="value">{format_currency(last["predicted_revenue"])}</div>
-                    <div class="meta">Model Version: {last["model_version"]}</div>
+                    <div class="meta">Model Version: {html.escape(str(last["model_version"]))}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1006,18 +1131,10 @@ def page_anomaly_detection() -> None:
 def page_api_status() -> None:
     render_app_header("API Status", "Live status of the FastAPI backend")
 
-    if st.button("🔄 Refresh Status", use_container_width=True):
-        result = check_api_health(st.session_state["api_url"])
-        if result["ok"]:
-            st.session_state["api_status"] = "online"
-            data = result["data"] or {}
-            st.session_state["model_loaded"] = data.get("model_loaded", data.get("model_status"))
-            st.session_state["model_version"] = data.get("model_version")
-            st.session_state["_last_health_response"] = data
-        else:
-            st.session_state["api_status"] = "offline"
-            st.session_state["model_loaded"] = None
-            st.session_state["_last_health_error"] = result
+    if st.button("🔄 Refresh Status", use_container_width=True, key="refresh_api_status"):
+        with st.spinner("Checking FastAPI /health..."):
+            result = check_api_health(st.session_state["api_url"])
+        _apply_health_result(result)
 
     status = st.session_state.get("api_status")
     c1, c2, c3, c4 = st.columns(4)
@@ -1099,6 +1216,11 @@ def main() -> None:
         page_api_status()
     elif page == "ℹ️ About":
         page_about()
+
+    st.markdown(
+        '<div class="footer">Revenue AI • FastAPI Backend • Streamlit Frontend</div>',
+        unsafe_allow_html=True,
+    )
 
 
 if __name__ == "__main__":
