@@ -112,7 +112,7 @@ REQUIRED_RESPONSE_FIELDS = [
     "model_version",
 ]
 
-DEFAULT_API_URL = "http://127.0.0.1:8000"
+DEFAULT_API_URL = "https://ai-powerd.fastapicloud.dev"
 CURRENCY_SYMBOL = "$"  # Change if the backend/project specifies another currency.
 
 
