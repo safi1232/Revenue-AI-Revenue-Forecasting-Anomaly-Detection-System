@@ -5,7 +5,7 @@ An end-to-end AI-powered revenue forecasting and anomaly detection system built 
 The system predicts future revenue based on business inputs such as the prediction date, number of products sold, orders, and customers. It also detects whether the predicted revenue represents normal or anomalous behavior.
 
 The architecture separates the **machine-learning backend** from the **frontend dashboard**:
-
+NOTE:project in progress
 - **FastAPI** → Handles prediction and anomaly detection
 - **Streamlit** → Provides the interactive dashboard
 - **Machine Learning Model** → Generates revenue predictions
