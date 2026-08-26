@@ -1855,50 +1855,45 @@ def page_api_status():
 # ============================================================
 # PAGE: ABOUT
 # ============================================================
-
 def page_about():
     render_app_header(
         "About Revenue AI",
         "How this system works",
     )
 
-    st.markdown(
+    st.info(
         """
-        <div class="info-panel">
-            <p>
-                <strong>Revenue AI</strong> is an AI-powered revenue
-                forecasting and anomaly detection system. This dashboard
-                is a Streamlit <em>frontend only</em>. Every prediction
-                and anomaly decision is produced by the FastAPI backend.
-            </p>
+        **Revenue AI** is an AI-powered revenue forecasting and anomaly
+        detection system.
 
-            <p><strong>What this application does:</strong></p>
-
-            <ul>
-                <li>Revenue forecasting via the FastAPI backend</li>
-                <li>Anomaly detection via the FastAPI backend</li>
-                <li>Interactive Plotly visualization</li>
-                <li>Session-level prediction history</li>
-                <li>CSV export</li>
-                <li>Live API health monitoring</li>
-            </ul>
-
-            <p>
-                <strong>What this application does not do:</strong>
-                it does not load, train, or run a machine-learning model,
-                and it does not calculate, threshold, or reinterpret
-                anomaly scores.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        This dashboard is a **Streamlit frontend only**. Every prediction
+        and anomaly decision is produced by the FastAPI backend.
+        """
     )
 
+    st.subheader("What this application does")
 
-# ============================================================
-# MAIN
-# ============================================================
+    st.markdown("""
+    - Revenue forecasting via the FastAPI backend
+    - Anomaly detection via the FastAPI backend
+    - Interactive Plotly visualization
+    - Session-level prediction history
+    - CSV export
+    - Live API health monitoring
+    """)
 
+    st.subheader("What this application does not do")
+
+    st.write(
+        """
+        This application does not load, train, or run a machine-learning
+        model. It also does not calculate, threshold, or reinterpret
+        anomaly scores.
+
+        All machine-learning predictions and anomaly decisions are handled
+        by the FastAPI backend.
+        """
+    )
 def main():
     init_session_state()
     inject_css()
