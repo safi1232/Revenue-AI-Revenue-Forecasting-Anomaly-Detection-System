@@ -94,7 +94,7 @@ The dashboard can check whether the FastAPI backend is available and display:
 - Model status
 - Model version
 - Backend URL
-NOTE:###project in progress###
+### NOTE:project in progress
 ---
 
 # 🏗️ System Architecture
