@@ -47,16 +47,18 @@ st.set_page_config(
 
 # ============================================================
 # USER_INPUT_FIELDS
-# IMPORTANT: Replace this configuration with the REAL FastAPI
-# UserInput schema before production use. Backend compatibility
-# CANNOT be guaranteed until these are swapped for the real
-# Pydantic field names, types, and constraints.
+# Matches the real FastAPI UserInput schema:
+#   { "Date": "YYYY-MM-DD", "Orders": int, "Customers": int,
+#     "Products": int, "Actual_Revenue": float (OPTIONAL) }
 #
 # Every field consumed by the Revenue Prediction form is driven
 # ONLY by this list — nothing is hardcoded elsewhere in the app.
 #
 # Supported "type" values: "number", "int", "bool", "date",
-# "categorical", "slider", "text"
+# "categorical", "slider", "text", "optional_number"
+#
+# "optional_number" fields are OMITTED from the payload entirely
+# if left blank — they are never sent as 0 or null.
 # ============================================================
 
 USER_INPUT_FIELDS = [
@@ -104,13 +106,37 @@ USER_INPUT_FIELDS = [
         "help": "Number of unique customers.",
     },
 
+    {
+        "name": "Actual_Revenue",
+        "label": "Actual Revenue (optional)",
+        "type": "optional_number",
+        "group": "Business Information",
+        "default": None,
+        "help": "Optional. If you already know the actual revenue for this date, "
+                "enter it here for comparison. Leave blank to skip — it will not "
+                "be sent to the backend if empty.",
+    },
+
 ]
+
+# Fields the backend guarantees on every successful /predict response.
 REQUIRED_RESPONSE_FIELDS = [
     "predicted_revenue",
     "is_anomaly",
     "anomaly_status",
     "anomaly_score",
     "model_version",
+]
+
+# Additional fields the backend may return (e.g. when Actual_Revenue was
+# supplied). These are optional — never required for validation — but are
+# preserved and carried through history/export when present.
+OPTIONAL_RESPONSE_FIELDS = [
+    "actual_revenue",
+    "residual",
+    "absolute_error",
+    "forecast_anomaly",
+    "isolation_anomaly",
 ]
 
 DEFAULT_API_URL = "https://ai-powerd.fastapicloud.dev"
@@ -364,6 +390,11 @@ def init_session_state() -> None:
         "last_is_anomaly": None,
         "prediction_history": [],     # list of dicts
         "nav_page": "📊 Dashboard",
+        # Keep the sidebar radio widget's own state key in sync with
+        # "nav_page" so programmatic navigation (e.g. the dashboard CTA
+        # button) actually moves the visible page, not just the tracking
+        # variable.
+        "navigation_radio": "📊 Dashboard",
         "theme": "light",
         "reset_confirm": False,
         "_last_health_response": None,
@@ -372,6 +403,20 @@ def init_session_state() -> None:
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+
+
+def go_to_page(page_name: str) -> None:
+    """
+    Programmatically navigate to a page.
+
+    Streamlit's radio widget (key="navigation_radio" in the sidebar) owns
+    its own entry in session_state once created; simply changing "nav_page"
+    does not move the widget's visible selection on rerun. Both keys must
+    be updated together for navigation triggered from buttons (e.g. the
+    dashboard "Generate Revenue Forecast" CTA) to actually work.
+    """
+    st.session_state["nav_page"] = page_name
+    st.session_state["navigation_radio"] = page_name
 
 
 # ============================================================
@@ -478,6 +523,13 @@ def handle_api_error(result: dict) -> str:
 
 
 def validate_prediction_response(data: dict) -> bool:
+    """
+    Only the fields the backend always guarantees are required.
+    Optional fields (actual_revenue, residual, absolute_error,
+    forecast_anomaly, isolation_anomaly) are accepted if present but never
+    required — a response without them (e.g. no Actual_Revenue was sent)
+    is still valid.
+    """
     if not isinstance(data, dict):
         return False
     return all(field in data for field in REQUIRED_RESPONSE_FIELDS)
@@ -698,6 +750,7 @@ def reset_session_data() -> None:
         "api_url": api_url,
         "theme": theme,
         "nav_page": nav_page,
+        "navigation_radio": nav_page,
         "api_status": None,
         "model_loaded": None,
         "model_version": None,
@@ -820,6 +873,12 @@ def render_input_field(field: dict):
             label, value=int(field.get("default", 0)),
             min_value=field.get("min"), step=1, help=help_text,
         )
+    if ftype == "optional_number":
+        # Rendered as a plain text field so it can be left blank. Blank
+        # means "not provided" and is dropped from the payload entirely —
+        # it is never coerced to 0 or sent as null.
+        default_str = "" if field.get("default") is None else str(field.get("default"))
+        return st.text_input(label, value=default_str, help=help_text, placeholder="Leave blank if unknown")
     if ftype == "bool":
         return st.checkbox(label, value=bool(field.get("default", False)), help=help_text)
     if ftype == "date":
@@ -850,6 +909,7 @@ def build_prediction_form() -> dict | None:
         groups.setdefault(field["group"], []).append(field)
 
     values: dict = {}
+    validation_error: str | None = None
 
     with st.form("prediction_form", clear_on_submit=False):
         for group_name, fields in groups.items():
@@ -858,12 +918,29 @@ def build_prediction_form() -> dict | None:
             for i, field in enumerate(fields):
                 with cols[i % len(cols)]:
                     raw_value = render_input_field(field)
-                    if isinstance(raw_value, date):
-                        values[field["name"]] = raw_value.isoformat()
+                    ftype = field["type"]
+                    name = field["name"]
+
+                    if ftype == "date":
+                        values[name] = raw_value.isoformat() if isinstance(raw_value, date) else raw_value
+                    elif ftype == "optional_number":
+                        text_val = (raw_value or "").strip()
+                        if text_val == "":
+                            # Truly optional: omit the key so the backend
+                            # never receives Actual_Revenue at all.
+                            continue
+                        try:
+                            values[name] = float(text_val)
+                        except ValueError:
+                            validation_error = f"'{field['label']}' must be a number if provided."
                     else:
-                        values[field["name"]] = raw_value
+                        values[name] = raw_value
 
         submitted = st.form_submit_button("Generate Forecast", use_container_width=True)
+
+    if submitted and validation_error:
+        st.error(f"⚠️ {validation_error}")
+        return None
 
     return values if submitted else None
 
@@ -927,8 +1004,11 @@ def page_dashboard() -> None:
             """,
             unsafe_allow_html=True,
         )
-        if st.button("Generate Revenue Forecast →", use_container_width=True):
-            st.session_state["nav_page"] = "📈 Revenue Prediction"
+        if st.button("Generate Revenue Forecast →", use_container_width=True, key="cta_generate_forecast"):
+            # Update both the tracking variable AND the radio widget's own
+            # state key so the sidebar actually reflects the navigation
+            # (see go_to_page docstring for why both are needed).
+            go_to_page("📈 Revenue Prediction")
             st.rerun()
     else:
         c1, c2 = st.columns([2, 1])
@@ -970,6 +1050,10 @@ def page_dashboard() -> None:
         display_df.columns = ["Timestamp", "Predicted Revenue", "Status", "Anomaly Score", "Model Version"]
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
+        # Full history (including optional backend fields like
+        # actual_revenue/residual/absolute_error when present) goes into
+        # the CSV export, even though the on-screen table above stays
+        # exactly as designed.
         csv_bytes = pd.DataFrame(history).to_csv(index=False).encode("utf-8")
         st.download_button(
             "⬇ Download History CSV",
@@ -1018,6 +1102,10 @@ def page_revenue_prediction() -> None:
                 st.success("✅ Prediction completed successfully")
 
                 # Store exact backend response — values are never altered.
+                # This already includes any optional fields the backend
+                # returned (actual_revenue, residual, absolute_error,
+                # forecast_anomaly, isolation_anomaly) since we keep the
+                # full dict as-is.
                 st.session_state["last_prediction"] = data
                 st.session_state["last_predicted_revenue"] = data["predicted_revenue"]
                 st.session_state["last_anomaly_status"] = data["anomaly_status"]
@@ -1032,6 +1120,12 @@ def page_revenue_prediction() -> None:
                     "anomaly_score": data["anomaly_score"],
                     "model_version": data["model_version"],
                 }
+                # Carry through optional backend fields when present,
+                # without altering any value returned by the backend.
+                for opt_field in OPTIONAL_RESPONSE_FIELDS:
+                    if opt_field in data:
+                        history_entry[opt_field] = data[opt_field]
+
                 st.session_state["prediction_history"].append(history_entry)
 
     # --- Result section (uses latest stored prediction, if any) ---
@@ -1068,6 +1162,10 @@ def page_revenue_prediction() -> None:
             "anomaly_score": last["anomaly_score"],
             "model_version": last["model_version"],
         }
+        for opt_field in OPTIONAL_RESPONSE_FIELDS:
+            if opt_field in last:
+                export_row[opt_field] = last[opt_field]
+
         csv_bytes = pd.DataFrame([export_row]).to_csv(index=False).encode("utf-8")
         st.download_button(
             "⬇ Download Prediction",
