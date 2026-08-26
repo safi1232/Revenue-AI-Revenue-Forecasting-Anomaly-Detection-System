@@ -3,7 +3,7 @@
 > 🚧 **Project Status: Work in Progress**
 >
 > This project is currently under active development. Features, architecture, API responses, models, and the user interface may change as the system continues to improve.
-
+APP URL:https://revenue-ai-revenue-forecasting-anomaly-detection-system-hq4dtd.streamlit.app/
 An end-to-end **AI-powered Revenue Forecasting and Anomaly Detection System** built with **Python, Machine Learning, FastAPI, and Streamlit**.
 
 The system predicts future revenue using business-related inputs such as the prediction date, number of products sold, orders, and customers. In addition to forecasting revenue, the system analyzes predictions to determine whether the revenue behavior is **Normal** or **Anomalous**.
